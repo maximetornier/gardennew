@@ -2245,14 +2245,14 @@ document.getElementById("addPlotBtn").addEventListener("click", ()=>{
 document.getElementById("addRectBtn").addEventListener("click", ()=>{
   const c = viewportCenterWorld();
   const w=140, h=90;
-  const shape = {id:"g"+Date.now(), type:"rect", x:c.x-w/2, y:c.y-h/2, w, h, color:"#C1A58F", pattern:"grass", borderColor:"#000000", borderWidth:1, label:"", cornerRadius:1, locked:false,
+  const shape = {id:"g"+Date.now(), type:"rect", x:c.x-w/2, y:c.y-h/2, w, h, color:"#B4BD78", pattern:"grass", borderColor:"#000000", borderWidth:1, label:"", cornerRadius:1, locked:false,
     speckleDensity:35, speckleSize:50, speckleColor:"#354E2D"};
   STORE.bg.push(shape); save(); renderBg(); openBgEditor(shape.id);
 });
 document.getElementById("addCircleBtn").addEventListener("click", ()=>{
   const c = viewportCenterWorld();
   const w=90, h=90;
-  const shape = {id:"g"+Date.now(), type:"circle", x:c.x-w/2, y:c.y-h/2, w, h, color:"#C1A58F", pattern:"grass", borderColor:"#000000", borderWidth:1, label:"", locked:false,
+  const shape = {id:"g"+Date.now(), type:"circle", x:c.x-w/2, y:c.y-h/2, w, h, color:"#B4BD78", pattern:"grass", borderColor:"#000000", borderWidth:1, label:"", locked:false,
     speckleDensity:35, speckleSize:50, speckleColor:"#354E2D"};
   STORE.bg.push(shape); save(); renderBg(); openBgEditor(shape.id);
 });
@@ -2559,8 +2559,8 @@ const bgHeroLabel = document.getElementById("bgHeroLabel");
 const bgHeroSub = document.getElementById("bgHeroSub");
 const PRESET_LABELS = {grass:"Grass", earth:"Earth", gravel:"Gravel", paving:"Pave"};
 const PRESET_DEFAULTS = {
-  grass:  {color:"#C1A58F", speckleColor:"#354E2D", speckleDensity:35, speckleSize:50, borderColor:"#000000", borderWidth:1},
-  earth:  {color:"#B4BD78", speckleColor:"#28231F", speckleDensity:35, speckleSize:50, borderColor:"#000000", borderWidth:1},
+  grass:  {color:"#B4BD78", speckleColor:"#354E2D", speckleDensity:35, speckleSize:50, borderColor:"#000000", borderWidth:1},
+  earth:  {color:"#C1A58F", speckleColor:"#28231F", speckleDensity:35, speckleSize:50, borderColor:"#000000", borderWidth:1},
   gravel: {color:"#ECD9BD", speckleColor:"#896E43", speckleDensity:39, speckleSize:20, borderColor:"#000000", borderWidth:1},
   paving: {color:"#EDE8DC", borderColor:"#000000", borderWidth:1}
 };
