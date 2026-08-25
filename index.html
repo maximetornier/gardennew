@@ -111,6 +111,9 @@
     background-position: 0 0;
   }
   .bgshape.tree, .bgshape.bush{border:none; background:none; filter:none; overflow:visible;}
+  .bgshape.text{border:none; background:none; filter:none; overflow:visible;}
+  .bgTextContent{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center;
+    white-space:pre-wrap; word-break:break-word; padding:2px; pointer-events:none;}
   .bgLabel{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:6px;
     font-size:12px; font-weight:700; color:#fff;
     font-family:-apple-system,sans-serif; pointer-events:none; overflow-wrap:anywhere;}
@@ -325,6 +328,7 @@
       <button class="btn btn-sun" id="addCircleBtn">+ Circle</button>
       <button class="btn btn-sun" id="addTreeBtn">+ Tree</button>
       <button class="btn btn-sun" id="addBushBtn">+ Bush</button>
+      <button class="btn btn-sun" id="addTextBtn">+ Text</button>
       <button class="btn btn-outline" id="bedsToggleBtn">Show beds</button>
       <button class="btn btn-outline btn-icon undoBtnEl" aria-label="Undo" disabled><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8H4V4"/><path d="M4 8c2.4-2.4 5-4 8-4a9 9 0 110 18"/></svg></button>
       <button class="btn btn-outline btn-icon" id="settingsBtn" aria-label="Map Settings"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="2.2" fill="currentColor" stroke="none"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="16" cy="12" r="2.2" fill="currentColor" stroke="none"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="11" cy="18" r="2.2" fill="currentColor" stroke="none"/></svg></button>
@@ -514,6 +518,26 @@
       <input type="range" id="bgFlowerDensity" min="10" max="100" step="10" style="width:100%;">
     </div>
 
+    <div class="bgSection" id="bgTextCard" style="display:none;">
+      <div class="bgSectionTitle">Text</div>
+      <textarea id="bgTextContent" rows="2" placeholder="Type anything…" style="width:100%; box-sizing:border-box; padding:10px 12px; border:1.5px solid var(--line); border-radius:2px; font-size:13px; margin-bottom:14px; resize:vertical; font-family:-apple-system,sans-serif;"></textarea>
+      <div class="colorRow" style="margin-bottom:14px;">
+        <input type="color" id="bgTextColor">
+        <span class="colorRowLabel">Text color</span>
+      </div>
+      <label>Font Size <span style="font-weight:400; text-transform:none; color:var(--muted);" id="bgFontSizeValue">20px</span></label>
+      <input type="range" id="bgFontSize" min="10" max="72" step="1" style="width:100%; margin-bottom:14px;">
+      <label>Font</label>
+      <select id="bgFontFamily" style="width:100%; padding:9px 10px; border:1.5px solid var(--line); border-radius:2px; font-size:13px; margin-bottom:14px;">
+        <option value="-apple-system, BlinkMacSystemFont, sans-serif">Sans-serif</option>
+        <option value="Georgia, 'Times New Roman', serif">Serif</option>
+        <option value="'Courier New', monospace">Monospace</option>
+        <option value="'Bradley Hand', 'Segoe Print', cursive">Handwritten</option>
+      </select>
+      <label>Rotation <span style="font-weight:400; text-transform:none; color:var(--muted);" id="bgRotationValue">0°</span></label>
+      <button class="btn btn-outline" id="bgRotate90" style="width:100%;">↻ Rotate 90°</button>
+    </div>
+
     <div class="bgHeroPreview" id="bgHeroPreview">
       <div class="bgHeroPreviewFill" id="bgHeroPreviewFill"><div id="bgHeroPreviewInner" style="width:100%; height:100%;"></div></div>
       <div class="bgHeroPreviewMeta">
@@ -573,7 +597,7 @@
 
     <div class="bgDivider"></div>
 
-    <div class="bgSection">
+    <div class="bgSection" id="bgLabelField">
       <div class="bgSectionTitle">Label</div>
       <input type="text" id="bgLabelText" placeholder="e.g. Lawn, Path to shed…" style="width:100%; box-sizing:border-box; padding:10px 12px; border:1.5px solid var(--line); border-radius:2px; font-size:13px;">
     </div>
@@ -1184,6 +1208,13 @@ function migrateParsed(parsed){
     if(s.type==="bush" && s.bushStyle===undefined) s.bushStyle = "plain";
     if(s.type==="bush" && s.flowerColor===undefined) s.flowerColor = "#9C6EB8";
     if(s.type==="bush" && s.flowerDensity===undefined) s.flowerDensity = 60;
+    if(s.type==="text"){
+      if(s.text===undefined) s.text = "Text";
+      if(s.textColor===undefined) s.textColor = "#14181B";
+      if(s.fontSize===undefined) s.fontSize = 20;
+      if(s.fontFamily===undefined) s.fontFamily = "-apple-system, BlinkMacSystemFont, sans-serif";
+      if(s.rotation===undefined) s.rotation = 0;
+    }
     if((s.type==="rect" || s.type==="circle" || s.type==="plot") && s.speckleDensity===undefined){
       const presetColor = {grass:"#354E2D", earth:"#28231F", gravel:"#896E43"}[s.pattern] || "#000000";
       s.speckleDensity = 30;
@@ -1765,6 +1796,7 @@ function renderBg(){
     const isPlot = shape.type === "plot";
     const isTree = shape.type === "tree";
     const isBush = shape.type === "bush";
+    const isText = shape.type === "text";
     const div = document.createElement("div");
     let cls = "bgshape " + shape.type;
     div.className = cls;
@@ -1781,6 +1813,15 @@ function renderBg(){
       div.innerHTML = TREE_SVG;
     } else if(isBush){
       div.innerHTML = (shape.bushStyle === "flowering") ? buildFloweringBushSVG(shape.flowerColor, shape.flowerDensity) : BUSH_PLAIN_SVG;
+    } else if(isText){
+      const txt = document.createElement("div");
+      txt.className = "bgTextContent";
+      txt.textContent = shape.text || "Text";
+      txt.style.color = shape.textColor || "#14181B";
+      txt.style.fontSize = (shape.fontSize || 20) + "px";
+      txt.style.fontFamily = shape.fontFamily || "-apple-system, BlinkMacSystemFont, sans-serif";
+      txt.style.transform = "rotate(" + (shape.rotation || 0) + "deg)";
+      div.appendChild(txt);
     } else if(isPlot){
       div.style.borderWidth = (shape.borderWidth != null ? shape.borderWidth : 3) + "px";
       div.style.borderStyle = "solid";
@@ -2268,6 +2309,13 @@ document.getElementById("addBushBtn").addEventListener("click", ()=>{
   const shape = {id:"g"+Date.now(), type:"bush", x:c.x-w/2, y:c.y-h/2, w, h, color:null, pattern:"none", borderColor:null, borderWidth:0, label:"", bushStyle:"plain", flowerColor:"#9C6EB8", flowerDensity:60, locked:false};
   STORE.bg.push(shape); save(); renderBg(); openBgEditor(shape.id);
 });
+document.getElementById("addTextBtn").addEventListener("click", ()=>{
+  const c = viewportCenterWorld();
+  const w=120, h=40;
+  const shape = {id:"g"+Date.now(), type:"text", x:c.x-w/2, y:c.y-h/2, w, h, color:null, pattern:"none", borderColor:null, borderWidth:0, label:"",
+    text:"Text", textColor:"#14181B", fontSize:20, fontFamily:"-apple-system, BlinkMacSystemFont, sans-serif", rotation:0, locked:false};
+  STORE.bg.push(shape); save(); renderBg(); openBgEditor(shape.id);
+});
 document.getElementById("fitAllBtn").addEventListener("click", fitViewToContent);
 document.getElementById("menuBtn").addEventListener("click", ()=>{
   document.getElementById("mainMenuOverlay").hidden = false;
@@ -2712,6 +2760,53 @@ bgFlowerDensity.addEventListener("input", ()=>{
   bgFlowerDensityValue.textContent = s.flowerDensity + "%";
   save(); renderBg(); updateFlowerPreview(s);
 });
+const bgTextContent = document.getElementById("bgTextContent");
+const bgTextColor = document.getElementById("bgTextColor");
+const bgFontSize = document.getElementById("bgFontSize");
+const bgFontSizeValue = document.getElementById("bgFontSizeValue");
+const bgFontFamily = document.getElementById("bgFontFamily");
+const bgRotationValue = document.getElementById("bgRotationValue");
+function populateTextControls(s){
+  bgTextContent.value = s.text || "";
+  bgTextColor.value = s.textColor || "#14181B";
+  const fs = s.fontSize != null ? s.fontSize : 20;
+  bgFontSize.value = fs;
+  bgFontSizeValue.textContent = fs + "px";
+  bgFontFamily.value = s.fontFamily || "-apple-system, BlinkMacSystemFont, sans-serif";
+  bgRotationValue.textContent = (s.rotation || 0) + "°";
+}
+bgTextContent.addEventListener("input", ()=>{
+  if(!editingBgId) return;
+  const s = STORE.bg.find(x=>x.id===editingBgId);
+  s.text = bgTextContent.value;
+  save(); renderBg();
+});
+bgTextColor.addEventListener("input", ()=>{
+  if(!editingBgId) return;
+  const s = STORE.bg.find(x=>x.id===editingBgId);
+  s.textColor = bgTextColor.value;
+  save(); renderBg();
+});
+bgFontSize.addEventListener("input", ()=>{
+  if(!editingBgId) return;
+  const s = STORE.bg.find(x=>x.id===editingBgId);
+  s.fontSize = Number(bgFontSize.value);
+  bgFontSizeValue.textContent = s.fontSize + "px";
+  save(); renderBg();
+});
+bgFontFamily.addEventListener("change", ()=>{
+  if(!editingBgId) return;
+  const s = STORE.bg.find(x=>x.id===editingBgId);
+  s.fontFamily = bgFontFamily.value;
+  save(); renderBg();
+});
+document.getElementById("bgRotate90").addEventListener("click", ()=>{
+  if(!editingBgId) return;
+  const s = STORE.bg.find(x=>x.id===editingBgId);
+  s.rotation = ((s.rotation || 0) + 90) % 360;
+  bgRotationValue.textContent = s.rotation + "°";
+  save(); renderBg();
+});
 bushStyleButtons.forEach(btn=>{
   btn.addEventListener("click", ()=>{
     if(!editingBgId) return;
@@ -2733,11 +2828,12 @@ function updatePlotScaleReadout(s){
 function openBgEditor(id){
   editingBgId = id;
   const s = STORE.bg.find(x=>x.id===id);
-  const labelMap = {tree:"Tree", bush:"Bush", circle:"Circle", rect:"Rectangle", plot:"Plot"};
+  const labelMap = {tree:"Tree", bush:"Bush", circle:"Circle", rect:"Rectangle", plot:"Plot", text:"Text"};
   bgShapeLabel.textContent = labelMap[s.type] || "Shape";
   const isPlot = s.type === "plot";
   const isTree = s.type === "tree";
   const isBush = s.type === "bush";
+  const isText = s.type === "text";
   updatePatternSelection(s.pattern);
   updateBgLockButton(s);
   document.getElementById("bgSizeReadout").textContent = realSizeText(s.w, s.h);
@@ -2750,13 +2846,15 @@ function openBgEditor(id){
   bgBushStyleField.style.display = isBush ? "block" : "none";
   if(isBush) updateBushStyleSelection(s.bushStyle);
   updateFlowerControlsVisibility(s);
-  document.getElementById("bgHeroPreview").style.display = (isTree || isBush) ? "none" : "block";
-  bgFillCard.style.display = (isTree || isBush) ? "none" : "block";
-  document.getElementById("bgShapeCard").style.display = (isTree || isBush) ? "none" : "block";
-  document.getElementById("bgShapeDivider").style.display = (isTree || isBush) ? "none" : "block";
-  const showSpeckle = !isTree && !isBush && s.pattern !== "paving";
+  document.getElementById("bgTextCard").style.display = isText ? "block" : "none";
+  if(isText) populateTextControls(s);
+  document.getElementById("bgHeroPreview").style.display = (isTree || isBush || isText) ? "none" : "block";
+  bgFillCard.style.display = (isTree || isBush || isText) ? "none" : "block";
+  document.getElementById("bgShapeCard").style.display = (isTree || isBush || isText) ? "none" : "block";
+  document.getElementById("bgShapeDivider").style.display = (isTree || isBush || isText) ? "none" : "block";
+  const showSpeckle = !isTree && !isBush && !isText && s.pattern !== "paving";
   bgSpeckleField.style.display = showSpeckle ? "block" : "none";
-  if(!isTree && !isBush){
+  if(!isTree && !isBush && !isText){
     populateColorControls(s);
     updateHeroPreview(s);
   }
@@ -2769,6 +2867,7 @@ function openBgEditor(id){
   document.getElementById("bgSendBackField").style.display = isPlot ? "none" : "block";
   document.getElementById("bgBorderColor").value = s.borderColor || (isPlot ? "#E1D199" : "#000000");
   document.getElementById("bgBorderWidth").value = s.borderWidth != null ? s.borderWidth : (isPlot ? 3 : 1.5);
+  document.getElementById("bgLabelField").style.display = isText ? "none" : "block";
   document.getElementById("bgLabelText").value = s.label || "";
   bgOverlay.hidden = false;
 }
