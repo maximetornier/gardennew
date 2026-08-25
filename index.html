@@ -63,7 +63,7 @@
   #world{position:absolute; top:0; left:0; transform-origin:0 0;}
   .bed, .bgshape{position:absolute; overflow:hidden;}
   .bgshapeFill{position:absolute; inset:0; border-radius:inherit;}
-  .bed{border-radius:1px; border:1.3px solid #3A3A3A; padding:6px 8px; box-shadow:none; pointer-events:auto;}
+  .bed{border-radius:1px; border:1px solid #3A3A3A; padding:6px 8px; box-shadow:none; pointer-events:auto;}
   .bgEditing .bed{pointer-events:none; opacity:0.5;}
   .bgEditing.bedsHidden .bed{display:none;}
   .bed .bname{font-size:10px; font-weight:700; color:rgba(0,0,0,0.55); font-family:-apple-system,sans-serif;}
@@ -78,6 +78,13 @@
   .openIcon{position:absolute; top:4px; right:4px; width:22px; height:22px; border-radius:2px; background:var(--leaf);
     color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:none; pointer-events:auto; z-index:3;}
   .openIcon:active{transform:scale(0.9);}
+  .bedOpenTriangle{
+    position:absolute; top:0; right:0; width:0; height:0;
+    border-style:solid; border-width:0 16px 16px 0;
+    border-color:transparent var(--leaf) transparent transparent;
+    pointer-events:auto; z-index:3;
+  }
+  .bedOpenTriangle:active{opacity:0.7;}
   .perennialBadge{position:absolute; bottom:4px; right:4px; width:18px; height:18px; border-radius:50%; background:var(--leaf-dark);
     color:#fff; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; box-shadow:none; z-index:3;}
   .bedAreaLabel{position:absolute; bottom:4px; right:4px; font-size:9.5px; font-weight:700; color:var(--muted); font-family:-apple-system,sans-serif; pointer-events:none;}
@@ -99,8 +106,9 @@
   .bgshapeFill.pattern-paving{
     background-color:#EDE8DC;
     background-image:
-      repeating-linear-gradient(0deg, rgba(210,200,176,0.8) 0 1px, transparent 1px 20px),
+      repeating-linear-gradient(180deg, rgba(210,200,176,0.8) 0 1px, transparent 1px 20px),
       repeating-linear-gradient(90deg, rgba(210,200,176,0.8) 0 1px, transparent 1px 25px);
+    background-position: 0 0;
   }
   .bgshape.tree, .bgshape.bush{border:none; background:none; filter:none; overflow:visible;}
   .bgLabel{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:6px;
@@ -260,6 +268,13 @@
 <body>
 <svg width="0" height="0" style="position:absolute;" aria-hidden="true">
   <defs id="dynamicFilterDefs">
+    <filter id="treeBushSpeckle" x="0%" y="0%" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" seed="41" result="n"/>
+      <feComponentTransfer in="n" result="s"><feFuncA type="discrete" tableValues="0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1"/></feComponentTransfer>
+      <feColorMatrix in="s" type="matrix" values="0 0 0 0 0.08  0 0 0 0 0.2  0 0 0 0 0.08  0 0 0 1 0" result="specksRaw"/>
+      <feComposite in="specksRaw" in2="SourceGraphic" operator="in" result="specksMasked"/>
+      <feComposite in="specksMasked" in2="SourceGraphic" operator="over"/>
+    </filter>
   </defs>
 </svg>
 
@@ -413,6 +428,24 @@
         <button class="colorSwatchBtn" data-color="#BA7517" style="background:#BA7517;" title="Amber"></button>
         <button class="colorSwatchBtn" data-color="#639922" style="background:#639922;" title="Green"></button>
         <button class="colorSwatchBtn" data-color="#378ADD" style="background:#378ADD;" title="Blue"></button>
+        <input type="color" id="edCustomColor" style="width:36px; height:36px; border-radius:50%; border:2px solid var(--line); padding:0; flex-shrink:0;" title="Custom color">
+      </div>
+      <div style="margin-top:12px;">
+        <label>Background Opacity <span style="font-weight:400; text-transform:none; color:var(--muted);" id="edOpacityValue">90%</span></label>
+        <input type="range" id="edOpacity" min="10" max="100" step="5" style="width:100%;">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Border Color <span style="font-weight:400; text-transform:none; color:var(--muted);">(1px, fixed)</span></label>
+      <div class="colorSwatchRow" id="edBorderColorSwatches">
+        <button class="colorSwatchBtn" data-bordercolor="#000000" style="background:#000000;" title="Black"></button>
+        <button class="colorSwatchBtn" data-bordercolor="#FFFFFF" style="background:#FFFFFF;" title="White"></button>
+        <button class="colorSwatchBtn" data-bordercolor="#E24B4A" style="background:#E24B4A;" title="Red"></button>
+        <button class="colorSwatchBtn" data-bordercolor="#BA7517" style="background:#BA7517;" title="Amber"></button>
+        <button class="colorSwatchBtn" data-bordercolor="#639922" style="background:#639922;" title="Green"></button>
+        <button class="colorSwatchBtn" data-bordercolor="#378ADD" style="background:#378ADD;" title="Blue"></button>
+        <input type="color" id="edCustomBorderColor" style="width:36px; height:36px; border-radius:50%; border:2px solid var(--line); padding:0; flex-shrink:0;" title="Custom color">
       </div>
     </div>
 
@@ -466,6 +499,19 @@
         <button class="treeStyleSwatch" data-bushstyle="plain">Plain</button>
         <button class="treeStyleSwatch" data-bushstyle="flowering">Flowering</button>
       </div>
+    </div>
+
+    <div class="field" id="bgFlowerField" style="display:none;">
+      <label>Flower Preview</label>
+      <div style="width:90px; height:90px; margin:0 auto 14px; background:#F3F1EA; border-radius:2px; display:flex; align-items:center; justify-content:center;">
+        <div id="bgFlowerPreviewSvg" style="width:76px; height:76px;"></div>
+      </div>
+      <div class="colorRow" style="margin-bottom:14px;">
+        <input type="color" id="bgFlowerColor">
+        <span class="colorRowLabel">Flower color</span>
+      </div>
+      <label>Flower Density <span style="font-weight:400; text-transform:none; color:var(--muted);" id="bgFlowerDensityValue">60%</span></label>
+      <input type="range" id="bgFlowerDensity" min="10" max="100" step="10" style="width:100%;">
     </div>
 
     <div class="bgHeroPreview" id="bgHeroPreview">
@@ -532,7 +578,10 @@
       <input type="text" id="bgLabelText" placeholder="e.g. Lawn, Path to shed…" style="width:100%; box-sizing:border-box; padding:10px 12px; border:1.5px solid var(--line); border-radius:2px; font-size:13px;">
     </div>
     <div class="field" id="bgSendBackField">
-      <button class="btn btn-outline" id="bgSendBack" style="width:100%;">⬇ Send to Back</button>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-outline" id="bgBringFront" style="flex:1;">⬆ Bring to Front</button>
+        <button class="btn btn-outline" id="bgSendBack" style="flex:1;">⬇ Send to Back</button>
+      </div>
     </div>
     </div>
   </div>
@@ -560,6 +609,12 @@
     <div class="divider"></div>
     <div class="field">
       <div class="readout">📐 Real-world sizing uses a fixed scale: 1 map unit = 1 cm. Every bed and shape shows its estimated real size automatically — draw or resize your Plot boundary to match your garden's actual dimensions to make everything else line up.</div>
+    </div>
+    <div class="divider"></div>
+    <div class="field">
+      <label>Danger Zone</label>
+      <button class="btn btn-outline" id="resetShapesBtn" style="width:100%; color:#B23A2A; border-color:#EFC9C4;">↺ Reset All Shapes to Default Style</button>
+      <div class="readout" style="margin-top:8px;">Resets every lawn, gravel, path, tree, bush, and the plot boundary back to their default color, texture, and border — your beds, crops, and layout stay untouched.</div>
     </div>
   </div>
 </div>
@@ -915,11 +970,13 @@ const PLANT_ICONS = {
 const TREE_SVG = `<svg viewBox="0 0 100 100" width="100%" height="100%" preserveAspectRatio="none" style="overflow:visible;">
 <g transform="translate(50,52) scale(1.25)">
   <path d="M0,-40 C9,-39 16,-36 21,-29 C27,-23 29,-36 34,-31 C37,-25 36,-16 37,-12 C43,-9 43,2 37,7 C39,14 34,23 28,25 C25,32 14,37 7,36 C4,41 -7,41 -11,36 C-19,37 -28,32 -32,25 C-39,23 -41,12 -37,5 C-43,0 -41,-12 -35,-16 C-37,-25 -32,-32 -25,-34 C-21,-39 -11,-41 -3,-37 C-2,-41 4,-41 0,-40 Z" fill="#8A6B4E" opacity="0.10" transform="translate(0,-40) scale(1,1.1) translate(0,40)"/>
-  <path d="M0,-40 C9,-39 16,-36 21,-29 C27,-23 29,-36 34,-31 C37,-25 36,-16 37,-12 C43,-9 43,2 37,7 C39,14 34,23 28,25 C25,32 14,37 7,36 C4,41 -7,41 -11,36 C-19,37 -28,32 -32,25 C-39,23 -41,12 -37,5 C-43,0 -41,-12 -35,-16 C-37,-25 -32,-32 -25,-34 C-21,-39 -11,-41 -3,-37 C-2,-41 4,-41 0,-40 Z" fill="#6E9450" stroke="#3F5C32" stroke-width="1.3"/>
-  <path d="M0,0 Q3,-19 0,-38 M0,0 Q13,-16 21,-27 M0,0 Q19,3 34,-7 M0,0 Q16,10 27,23 M0,0 Q-6,18 -9,34 M0,0 Q-19,4 -34,18 M0,0 Q-16,-13 -27,-21" stroke="#3F5C32" stroke-width="1" opacity="0.55" fill="none"/>
-  <path d="M0,0 Q3,-19 0,-38 Q13,-16 21,-27 Q10,-13 0,0 Z" fill="#8FAE6E" opacity="0.55"/>
-  <path d="M0,0 Q19,3 34,-7 Q16,10 27,23 Q13,11 0,0 Z" fill="#4C7038" opacity="0.45"/>
-  <path d="M0,0 Q-6,18 -9,34 Q-19,4 -34,18 Q-17,9 0,0 Z" fill="#8FAE6E" opacity="0.4"/>
+  <g filter="url(#treeBushSpeckle)">
+    <path d="M0,-40 C9,-39 16,-36 21,-29 C27,-23 29,-36 34,-31 C37,-25 36,-16 37,-12 C43,-9 43,2 37,7 C39,14 34,23 28,25 C25,32 14,37 7,36 C4,41 -7,41 -11,36 C-19,37 -28,32 -32,25 C-39,23 -41,12 -37,5 C-43,0 -41,-12 -35,-16 C-37,-25 -32,-32 -25,-34 C-21,-39 -11,-41 -3,-37 C-2,-41 4,-41 0,-40 Z" fill="#6E9450" stroke="#3F5C32" stroke-width="1.3"/>
+    <path d="M0,0 Q3,-19 0,-38 M0,0 Q13,-16 21,-27 M0,0 Q19,3 34,-7 M0,0 Q16,10 27,23 M0,0 Q-6,18 -9,34 M0,0 Q-19,4 -34,18 M0,0 Q-16,-13 -27,-21" stroke="#3F5C32" stroke-width="1" opacity="0.55" fill="none"/>
+    <path d="M0,0 Q3,-19 0,-38 Q13,-16 21,-27 Q10,-13 0,0 Z" fill="#8FAE6E" opacity="0.55"/>
+    <path d="M0,0 Q19,3 34,-7 Q16,10 27,23 Q13,11 0,0 Z" fill="#4C7038" opacity="0.45"/>
+    <path d="M0,0 Q-6,18 -9,34 Q-19,4 -34,18 Q-17,9 0,0 Z" fill="#8FAE6E" opacity="0.4"/>
+  </g>
 </g>
 </svg>`;
 const BUSH_SHAPE_D = "M0,-27c8,-1 15,3 19,9c6,2 10,9 8,16c3,6 0,13 -6,16c-2,6 -9,10 -16,9c-5,4 -13,4 -18,-1c-7,0 -13,-6 -14,-13c-5,-4 -6,-12 -2,-18c-1,-7 4,-14 11,-16c2,-6 10,-9 18,-2z";
@@ -927,38 +984,57 @@ const BUSH_PLAIN_SVG = `<svg viewBox="0 0 100 100" width="100%" height="100%" pr
 <defs><clipPath id="bushClipApp"><path d="${BUSH_SHAPE_D}"/></clipPath></defs>
 <g transform="translate(50,55) scale(1.35)">
   <path d="${BUSH_SHAPE_D}" fill="#8A6B4E" opacity="0.10" transform="translate(0,-27) scale(1,1.1) translate(0,27)"/>
-  <path d="${BUSH_SHAPE_D}" fill="#5C8544" stroke="#33481F" stroke-width="1.1"/>
-  <g clip-path="url(#bushClipApp)">
-    <path d="M0,0 L0,-27 M0,0 L23,-8 M0,0 L14,22 M0,0 L-15,24 M0,0 L-27,3 M0,0 L-13,-20" stroke="#33481F" stroke-width="0.8" opacity="0.45" fill="none"/>
-    <path d="M0,0 L0,-27 L23,-8 Z" fill="#7CA05C" opacity="0.45"/>
-    <path d="M0,0 L14,22 L-15,24 Z" fill="#456B30" opacity="0.35"/>
+  <g filter="url(#treeBushSpeckle)">
+    <path d="${BUSH_SHAPE_D}" fill="#5C8544" stroke="#33481F" stroke-width="1.1"/>
+    <g clip-path="url(#bushClipApp)">
+      <path d="M0,0 L0,-27 M0,0 L23,-8 M0,0 L14,22 M0,0 L-15,24 M0,0 L-27,3 M0,0 L-13,-20" stroke="#33481F" stroke-width="0.8" opacity="0.45" fill="none"/>
+      <path d="M0,0 L0,-27 L23,-8 Z" fill="#7CA05C" opacity="0.45"/>
+      <path d="M0,0 L14,22 L-15,24 Z" fill="#456B30" opacity="0.35"/>
+    </g>
   </g>
 </g>
 </svg>`;
-const BUSH_FLOWERING_SVG = `<svg viewBox="0 0 100 100" width="100%" height="100%" preserveAspectRatio="none" style="overflow:visible;">
+const FLOWER_POSITIONS = [
+  {x:-13, y:-14, scale:0.9}, {x:4, y:-18, scale:1.1}, {x:12, y:-6, scale:1.0},
+  {x:-16, y:3, scale:0.95}, {x:-2, y:10, scale:1.0}, {x:13, y:16, scale:0.85},
+  {x:-6, y:-22, scale:0.8}, {x:19, y:2, scale:0.9}, {x:4, y:4, scale:0.75},
+  {x:-21, y:-7, scale:0.85}, {x:2, y:21, scale:0.85}, {x:-9, y:19, scale:0.8}
+];
+const FLOWER_BLOB_D = "M-1.4,-2c-1.4,-2 1,-3.4 3,-2.4c1,-2 3.4,-1 3.2,1.2c2,0 2.2,2.2 0.2,3.2c1,2 -1.2,3.2 -3.2,2.2c-1,2 -3.2,1 -3.2,-1c-2,0 -2,-2.2 0,-3.2z";
+function shadeColor(hex, percent){
+  const h = (hex||"#9C6EB8").replace("#","");
+  let r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+  r = Math.min(255, Math.max(0, Math.round(r + (percent/100)*255)));
+  g = Math.min(255, Math.max(0, Math.round(g + (percent/100)*255)));
+  b = Math.min(255, Math.max(0, Math.round(b + (percent/100)*255)));
+  return "#" + [r,g,b].map(v=>v.toString(16).padStart(2,"0")).join("");
+}
+function buildFloweringBushSVG(flowerColor, density){
+  const color = flowerColor || "#9C6EB8";
+  const shades = [color, shadeColor(color, 15), shadeColor(color, -15)];
+  const dens = density != null ? density : 60;
+  const count = Math.max(1, Math.round(FLOWER_POSITIONS.length * dens / 100));
+  const positions = FLOWER_POSITIONS.slice(0, count);
+  const flowersHtml = positions.map((p, i) => {
+    const shade = shades[i % shades.length];
+    return `<g fill="${shade}" transform="translate(${p.x},${p.y}) scale(${p.scale})"><path d="${FLOWER_BLOB_D}"/></g>`;
+  }).join("");
+  return `<svg viewBox="0 0 100 100" width="100%" height="100%" preserveAspectRatio="none" style="overflow:visible;">
 <defs><clipPath id="bushClipAppF"><path d="${BUSH_SHAPE_D}"/></clipPath></defs>
 <g transform="translate(50,55) scale(1.35)">
   <path d="${BUSH_SHAPE_D}" fill="#8A6B4E" opacity="0.10" transform="translate(0,-27) scale(1,1.1) translate(0,27)"/>
-  <path d="${BUSH_SHAPE_D}" fill="#5C8544" stroke="#33481F" stroke-width="1.1"/>
-  <g clip-path="url(#bushClipAppF)">
-    <path d="M0,0 L0,-27 M0,0 L23,-8 M0,0 L14,22 M0,0 L-15,24 M0,0 L-27,3 M0,0 L-13,-20" stroke="#33481F" stroke-width="0.8" opacity="0.3" fill="none"/>
-    <path d="M0,0 L0,-27 L23,-8 Z" fill="#7CA05C" opacity="0.3"/>
-    <path d="M0,0 L14,22 L-15,24 Z" fill="#456B30" opacity="0.25"/>
-    <g fill="#9C6EB8"><path d="M-13,-14c-1.4,-2 1,-3.4 3,-2.4c1,-2 3.4,-1 3.2,1.2c2,0 2.2,2.2 0.2,3.2c1,2 -1.2,3.2 -3.2,2.2c-1,2 -3.2,1 -3.2,-1c-2,0 -2,-2.2 0,-3.2z" transform="scale(0.9)"/></g>
-    <g fill="#B084CC"><path d="M4,-18c-1.2,-1.7 0.8,-3 2.6,-2c0.9,-1.7 3,-0.8 2.8,1c1.7,0 1.9,1.9 0.2,2.8c0.9,1.7 -1,2.8 -2.8,1.9c-0.9,1.7 -2.8,0.9 -2.8,-0.9c-1.7,0 -1.7,-1.9 0,-2.8z" transform="scale(1.1)"/></g>
-    <g fill="#9C6EB8"><path d="M12,-6c-1.4,-2 1,-3.4 3,-2.4c1,-2 3.4,-1 3.2,1.2c2,0 2.2,2.2 0.2,3.2c1,2 -1.2,3.2 -3.2,2.2c-1,2 -3.2,1 -3.2,-1c-2,0 -2,-2.2 0,-3.2z"/></g>
-    <g fill="#B084CC"><path d="M-16,3c-1.2,-1.7 0.8,-3 2.6,-2c0.9,-1.7 3,-0.8 2.8,1c1.7,0 1.9,1.9 0.2,2.8c0.9,1.7 -1,2.8 -2.8,1.9c-0.9,1.7 -2.8,0.9 -2.8,-0.9c-1.7,0 -1.7,-1.9 0,-2.8z" transform="scale(0.95)"/></g>
-    <g fill="#A87BC2"><path d="M-2,10c-1.5,-2.1 1.1,-3.6 3.2,-2.6c1.1,-2.1 3.6,-1.1 3.4,1.3c2.1,0 2.3,2.3 0.2,3.4c1.1,2.1 -1.3,3.4 -3.4,2.3c-1.1,2.1 -3.4,1.1 -3.4,-1.1c-2.1,0 -2.1,-2.3 0,-3.4z"/></g>
-    <g fill="#9C6EB8"><path d="M13,16c-1.2,-1.7 0.8,-3 2.6,-2c0.9,-1.7 3,-0.8 2.8,1c1.7,0 1.9,1.9 0.2,2.8c0.9,1.7 -1,2.8 -2.8,1.9c-0.9,1.7 -2.8,0.9 -2.8,-0.9c-1.7,0 -1.7,-1.9 0,-2.8z" transform="scale(0.85)"/></g>
-    <g fill="#B084CC" transform="translate(-6,-22) scale(0.8)"><path d="M-1.4,-2c-1.4,-2 1,-3.4 3,-2.4c1,-2 3.4,-1 3.2,1.2c2,0 2.2,2.2 0.2,3.2c1,2 -1.2,3.2 -3.2,2.2c-1,2 -3.2,1 -3.2,-1c-2,0 -2,-2.2 0,-3.2z"/></g>
-    <g fill="#9C6EB8" transform="translate(19,2) scale(0.9)"><path d="M-1.2,-1.7c-1.2,-1.7 0.8,-3 2.6,-2c0.9,-1.7 3,-0.8 2.8,1c1.7,0 1.9,1.9 0.2,2.8c0.9,1.7 -1,2.8 -2.8,1.9c-0.9,1.7 -2.8,0.9 -2.8,-0.9c-1.7,0 -1.7,-1.9 0,-2.8z"/></g>
-    <g fill="#A87BC2" transform="translate(4,4) scale(0.75)"><path d="M-1.5,-2.1c-1.5,-2.1 1.1,-3.6 3.2,-2.6c1.1,-2.1 3.6,-1.1 3.4,1.3c2.1,0 2.3,2.3 0.2,3.4c1.1,2.1 -1.3,3.4 -3.4,2.3c-1.1,2.1 -3.4,1.1 -3.4,-1.1c-2.1,0 -2.1,-2.3 0,-3.4z"/></g>
-    <g fill="#B084CC" transform="translate(-21,-7) scale(0.85)"><path d="M-1.2,-1.7c-1.2,-1.7 0.8,-3 2.6,-2c0.9,-1.7 3,-0.8 2.8,1c1.7,0 1.9,1.9 0.2,2.8c0.9,1.7 -1,2.8 -2.8,1.9c-0.9,1.7 -2.8,0.9 -2.8,-0.9c-1.7,0 -1.7,-1.9 0,-2.8z"/></g>
-    <g fill="#9C6EB8" transform="translate(2,21) scale(0.85)"><path d="M-1.4,-2c-1.4,-2 1,-3.4 3,-2.4c1,-2 3.4,-1 3.2,1.2c2,0 2.2,2.2 0.2,3.2c1,2 -1.2,3.2 -3.2,2.2c-1,2 -3.2,1 -3.2,-1c-2,0 -2,-2.2 0,-3.2z"/></g>
-    <g fill="#A87BC2" transform="translate(-9,19) scale(0.8)"><path d="M-1.2,-1.7c-1.2,-1.7 0.8,-3 2.6,-2c0.9,-1.7 3,-0.8 2.8,1c1.7,0 1.9,1.9 0.2,2.8c0.9,1.7 -1,2.8 -2.8,1.9c-0.9,1.7 -2.8,0.9 -2.8,-0.9c-1.7,0 -1.7,-1.9 0,-2.8z"/></g>
+  <g filter="url(#treeBushSpeckle)">
+    <path d="${BUSH_SHAPE_D}" fill="#5C8544" stroke="#33481F" stroke-width="1.1"/>
+    <g clip-path="url(#bushClipAppF)">
+      <path d="M0,0 L0,-27 M0,0 L23,-8 M0,0 L14,22 M0,0 L-15,24 M0,0 L-27,3 M0,0 L-13,-20" stroke="#33481F" stroke-width="0.8" opacity="0.3" fill="none"/>
+      <path d="M0,0 L0,-27 L23,-8 Z" fill="#7CA05C" opacity="0.3"/>
+      <path d="M0,0 L14,22 L-15,24 Z" fill="#456B30" opacity="0.25"/>
+      ${flowersHtml}
+    </g>
   </g>
 </g>
 </svg>`;
+}
 const PLANT_ICON_VIEWBOX = {
   'Asparagus': '7.29 9.04 25.42 25.42',
   'Basil': '9.25 11.16 21.50 21.50',
@@ -1106,8 +1182,10 @@ function migrateParsed(parsed){
     if(s.treeStyle==="cluster") s.treeStyle = "star";
     if(s.treeStyle==="scallop") s.treeStyle = "star";
     if(s.type==="bush" && s.bushStyle===undefined) s.bushStyle = "plain";
+    if(s.type==="bush" && s.flowerColor===undefined) s.flowerColor = "#9C6EB8";
+    if(s.type==="bush" && s.flowerDensity===undefined) s.flowerDensity = 60;
     if((s.type==="rect" || s.type==="circle" || s.type==="plot") && s.speckleDensity===undefined){
-      const presetColor = {grass:"#2E4527", earth:"#5C4530", gravel:"#726C62"}[s.pattern] || "#000000";
+      const presetColor = {grass:"#354E2D", earth:"#28231F", gravel:"#896E43"}[s.pattern] || "#000000";
       s.speckleDensity = 30;
       s.speckleSize = 50;
       s.speckleColor = presetColor;
@@ -1150,6 +1228,8 @@ function migrateParsed(parsed){
     if(b.plannedW===undefined) b.plannedW = b.w;
     if(b.plannedH===undefined) b.plannedH = b.h;
     if(b.futureOnly===undefined) b.futureOnly = false;
+    if(b.opacity===undefined) b.opacity = 90;
+    if(b.borderColor===undefined) b.borderColor = "#000000";
   });
   return parsed;
 }
@@ -1492,7 +1572,7 @@ document.getElementById("addFutureBedBtn").addEventListener("click", ()=>{
   const w=160, h=100;
   const bed = {id:"b"+Date.now(), name:"Bed "+(n+1), x:c.x-w/2, y:c.y-h/2, w, h,
     plannedX:c.x-w/2, plannedY:c.y-h/2, plannedW:w, plannedH:h, futureOnly:true,
-    color:null, locked:false, current:"", datePlanted:"", next:"", seedDate:"", plantDate:"", harvestDate:"", plantCount:null, notes:""};
+    color:null, opacity:90, borderColor:"#000000", locked:false, current:"", datePlanted:"", next:"", seedDate:"", plantDate:"", harvestDate:"", plantCount:null, notes:""};
   STORE.beds.push(bed); save(); renderBeds();
 });
 
@@ -1523,7 +1603,7 @@ function renderBeds(){
     const r = getBedRect(bed);
     const info = computeBed(bed);
     const displayColor = bed.color || DEFAULT_COLOR;
-    const isWhiteSwatch = !bed.color || bed.color.toUpperCase() === "#FFFFFF";
+    const bedOpacity = bed.opacity != null ? bed.opacity : 90;
     const div = document.createElement("div");
     div.className = "bed";
     div.dataset.id = bed.id;
@@ -1531,8 +1611,9 @@ function renderBeds(){
     div.style.top = r.y + "px";
     div.style.width = r.w + "px";
     div.style.height = r.h + "px";
-    div.style.background = "#FFFFFF";
-    div.style.borderColor = isWhiteSwatch ? "#3A3A3A" : hexToRgba(displayColor, 0.9);
+    div.style.background = hexToRgba(displayColor, bedOpacity/100);
+    div.style.borderColor = bed.borderColor || "#000000";
+    div.style.borderWidth = "1px";
     if(editingFuture){ div.style.borderStyle = "dashed"; div.style.borderColor = "#5B5FA8"; div.style.borderWidth = "2px"; }
 
     const showFutureCrop = editingFuture && bed.next;
@@ -1575,10 +1656,9 @@ function renderBeds(){
 
     if(!editingBackground){
       const openBtn = document.createElement("div");
-      openBtn.className = "openIcon";
+      openBtn.className = "bedOpenTriangle";
       openBtn.dataset.role = "openicon";
       openBtn.dataset.id = bed.id;
-      openBtn.innerHTML = '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 16L16 8"/><path d="M10 8h6v6"/></svg>';
       div.appendChild(openBtn);
       if(isPerennialBadgeShown){
         const p = document.createElement("div");
@@ -1677,9 +1757,9 @@ function renderBg(){
   world.querySelectorAll('[data-role="bgduplicateicon"]').forEach(n=>n.remove());
   world.querySelectorAll('[data-role="bgdimchip"]').forEach(n=>n.remove());
   const firstBed = world.querySelector(".bed");
-  // plots always paint at the very back, trees always paint above everything else,
-  // while stable-sorting keeps each group's own relative order intact
-  const rank = (s)=> s.type==="plot" ? 0 : (s.type==="tree" ? 2 : 1);
+  // plots always paint at the very back (they're the ground boundary); everything else respects
+  // the order the user set via Send to Back / Bring to Front
+  const rank = (s)=> s.type==="plot" ? 0 : 1;
   const ordered = [...STORE.bg].sort((a,b)=> rank(a)-rank(b));
   ordered.forEach(shape=>{
     const isPlot = shape.type === "plot";
@@ -1700,7 +1780,7 @@ function renderBg(){
     if(isTree){
       div.innerHTML = TREE_SVG;
     } else if(isBush){
-      div.innerHTML = (shape.bushStyle === "flowering") ? BUSH_FLOWERING_SVG : BUSH_PLAIN_SVG;
+      div.innerHTML = (shape.bushStyle === "flowering") ? buildFloweringBushSVG(shape.flowerColor, shape.flowerDensity) : BUSH_PLAIN_SVG;
     } else if(isPlot){
       div.style.borderWidth = (shape.borderWidth != null ? shape.borderWidth : 3) + "px";
       div.style.borderStyle = "solid";
@@ -1814,6 +1894,7 @@ let resizePos = null;
 let pointers = new Map();
 let pinch = null;
 let lastTapTime = 0, lastTapX = 0, lastTapY = 0;
+let lastBedTapTime = 0, lastBedTapId = null;
 let zoomDrag = null;
 
 function snapThreshold(){ return 9/zoom; }
@@ -2099,7 +2180,20 @@ function endSinglePointer(){
     }
   }
   else if(mode === "zoomdrag"){ saveView(); }
-  else if(mode === "move"){ if(moved){ commitPendingUndo(); save(); } }
+  else if(mode === "move"){
+    if(moved){
+      commitPendingUndo(); save();
+      lastBedTapTime = 0; lastBedTapId = null;
+    } else {
+      const isDoubleBed = (activeId === lastBedTapId) && (Date.now() - lastBedTapTime < 350);
+      if(isDoubleBed){
+        lastBedTapTime = 0; lastBedTapId = null;
+        openEditor(activeId);
+      } else {
+        lastBedTapTime = Date.now(); lastBedTapId = activeId;
+      }
+    }
+  }
   else if(mode === "resize"){ commitPendingUndo(); save(); }
   else if(mode === "bgmove"){ if(moved){ commitPendingUndo(); save(); } }
   else if(mode === "bgresize"){ commitPendingUndo(); save(); }
@@ -2131,7 +2225,7 @@ document.getElementById("addBedBtn").addEventListener("click", ()=>{
   const w=160, h=100;
   const bed = {id:"b"+Date.now(), name:"Bed "+(n+1), x:c.x-w/2, y:c.y-h/2, w, h,
     plannedX:c.x-w/2, plannedY:c.y-h/2, plannedW:w, plannedH:h, futureOnly:false,
-    color:null, locked:false, current:"", datePlanted:"", next:"", seedDate:"", plantDate:"", harvestDate:"", plantCount:null, notes:""};
+    color:null, opacity:90, borderColor:"#000000", locked:false, current:"", datePlanted:"", next:"", seedDate:"", plantDate:"", harvestDate:"", plantCount:null, notes:""};
   STORE.beds.push(bed); save(); renderBeds(); openEditor(bed.id);
 });
 document.getElementById("addPlotBtn").addEventListener("click", ()=>{
@@ -2143,23 +2237,23 @@ document.getElementById("addPlotBtn").addEventListener("click", ()=>{
   }
   const c = viewportCenterWorld();
   const w=420, h=300;
-  const shape = {id:"g"+Date.now(), type:"plot", x:c.x-w/2, y:c.y-h/2, w, h, color:"#E8DFC8", pattern:"grass",
-    borderColor:"#5A5750", borderWidth:1.5, label:"", cornerRadius:1, locked:false, realWidthM:null, realLengthM:null,
-    speckleDensity:35, speckleSize:50, speckleColor:"#2E4527"};
+  const shape = {id:"g"+Date.now(), type:"plot", x:c.x-w/2, y:c.y-h/2, w, h, color:"#FFFFFF", pattern:"grass",
+    borderColor:"#000000", borderWidth:1, label:"", cornerRadius:1, locked:false, realWidthM:null, realLengthM:null,
+    speckleDensity:28, speckleSize:50, speckleColor:"#726C62"};
   STORE.bg.push(shape); save(); renderBg(); openBgEditor(shape.id);
 });
 document.getElementById("addRectBtn").addEventListener("click", ()=>{
   const c = viewportCenterWorld();
   const w=140, h=90;
-  const shape = {id:"g"+Date.now(), type:"rect", x:c.x-w/2, y:c.y-h/2, w, h, color:"#A8BC8A", pattern:"grass", borderColor:null, borderWidth:1.5, label:"", cornerRadius:1, locked:false,
-    speckleDensity:35, speckleSize:50, speckleColor:"#2E4527"};
+  const shape = {id:"g"+Date.now(), type:"rect", x:c.x-w/2, y:c.y-h/2, w, h, color:"#C1A58F", pattern:"grass", borderColor:"#000000", borderWidth:1, label:"", cornerRadius:1, locked:false,
+    speckleDensity:35, speckleSize:50, speckleColor:"#354E2D"};
   STORE.bg.push(shape); save(); renderBg(); openBgEditor(shape.id);
 });
 document.getElementById("addCircleBtn").addEventListener("click", ()=>{
   const c = viewportCenterWorld();
   const w=90, h=90;
-  const shape = {id:"g"+Date.now(), type:"circle", x:c.x-w/2, y:c.y-h/2, w, h, color:"#A8BC8A", pattern:"grass", borderColor:null, borderWidth:1.5, label:"", locked:false,
-    speckleDensity:35, speckleSize:50, speckleColor:"#2E4527"};
+  const shape = {id:"g"+Date.now(), type:"circle", x:c.x-w/2, y:c.y-h/2, w, h, color:"#C1A58F", pattern:"grass", borderColor:"#000000", borderWidth:1, label:"", locked:false,
+    speckleDensity:35, speckleSize:50, speckleColor:"#354E2D"};
   STORE.bg.push(shape); save(); renderBg(); openBgEditor(shape.id);
 });
 document.getElementById("addTreeBtn").addEventListener("click", ()=>{
@@ -2171,7 +2265,7 @@ document.getElementById("addTreeBtn").addEventListener("click", ()=>{
 document.getElementById("addBushBtn").addEventListener("click", ()=>{
   const c = viewportCenterWorld();
   const w=60, h=60;
-  const shape = {id:"g"+Date.now(), type:"bush", x:c.x-w/2, y:c.y-h/2, w, h, color:null, pattern:"none", borderColor:null, borderWidth:0, label:"", bushStyle:"plain", locked:false};
+  const shape = {id:"g"+Date.now(), type:"bush", x:c.x-w/2, y:c.y-h/2, w, h, color:null, pattern:"none", borderColor:null, borderWidth:0, label:"", bushStyle:"plain", flowerColor:"#9C6EB8", flowerDensity:60, locked:false};
   STORE.bg.push(shape); save(); renderBg(); openBgEditor(shape.id);
 });
 document.getElementById("fitAllBtn").addEventListener("click", fitViewToContent);
@@ -2235,6 +2329,10 @@ function openEditor(id){
   edPlantCount.value = bed.plantCount || "";
   updateDensity(bed);
   updateColorSwatchSelection(bed.color);
+  updateBorderColorSwatchSelection(bed.borderColor);
+  const bedOp = bed.opacity != null ? bed.opacity : 90;
+  edOpacity.value = bedOp;
+  edOpacityValue.textContent = bedOp + "%";
   edCurrent.innerHTML = plantOptions(bed.current);
   edDatePlanted.value = bed.datePlanted || "";
   edNext.innerHTML = plantOptions(bed.next);
@@ -2301,17 +2399,54 @@ edLockToggle.addEventListener("click", ()=>{
 });
 function updateColorSwatchSelection(color){
   const c = (color || DEFAULT_COLOR).toUpperCase();
-  document.querySelectorAll(".colorSwatchBtn").forEach(b=>{
+  document.querySelectorAll("#edColorSwatches .colorSwatchBtn").forEach(b=>{
     b.classList.toggle("selected", b.dataset.color.toUpperCase() === c);
   });
+  document.getElementById("edCustomColor").value = c;
 }
-document.querySelectorAll(".colorSwatchBtn").forEach(btn=>{
+document.querySelectorAll("#edColorSwatches .colorSwatchBtn").forEach(btn=>{
   btn.addEventListener("click", ()=>{
     if(!editingId) return;
     const bed = STORE.beds.find(b=>b.id===editingId);
     bed.color = btn.dataset.color;
     save(); renderBeds(); updateColorSwatchSelection(bed.color);
   });
+});
+document.getElementById("edCustomColor").addEventListener("input", (e)=>{
+  if(!editingId) return;
+  const bed = STORE.beds.find(b=>b.id===editingId);
+  bed.color = e.target.value;
+  save(); renderBeds(); updateColorSwatchSelection(bed.color);
+});
+function updateBorderColorSwatchSelection(color){
+  const c = (color || "#000000").toUpperCase();
+  document.querySelectorAll("#edBorderColorSwatches .colorSwatchBtn").forEach(b=>{
+    b.classList.toggle("selected", b.dataset.bordercolor.toUpperCase() === c);
+  });
+  document.getElementById("edCustomBorderColor").value = c;
+}
+document.querySelectorAll("#edBorderColorSwatches .colorSwatchBtn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    if(!editingId) return;
+    const bed = STORE.beds.find(b=>b.id===editingId);
+    bed.borderColor = btn.dataset.bordercolor;
+    save(); renderBeds(); updateBorderColorSwatchSelection(bed.borderColor);
+  });
+});
+document.getElementById("edCustomBorderColor").addEventListener("input", (e)=>{
+  if(!editingId) return;
+  const bed = STORE.beds.find(b=>b.id===editingId);
+  bed.borderColor = e.target.value;
+  save(); renderBeds(); updateBorderColorSwatchSelection(bed.borderColor);
+});
+const edOpacity = document.getElementById("edOpacity");
+const edOpacityValue = document.getElementById("edOpacityValue");
+edOpacity.addEventListener("input", ()=>{
+  if(!editingId) return;
+  const bed = STORE.beds.find(b=>b.id===editingId);
+  bed.opacity = Number(edOpacity.value);
+  edOpacityValue.textContent = bed.opacity + "%";
+  save(); renderBeds();
 });
 
 function updateSeedDateAvailability(nxt){
@@ -2424,15 +2559,48 @@ const bgHeroLabel = document.getElementById("bgHeroLabel");
 const bgHeroSub = document.getElementById("bgHeroSub");
 const PRESET_LABELS = {grass:"Grass", earth:"Earth", gravel:"Gravel", paving:"Pave"};
 const PRESET_DEFAULTS = {
-  grass:  {color:"#A8BC8A", speckleColor:"#2E4527", speckleDensity:35, speckleSize:50},
-  earth:  {color:"#9C6B45", speckleColor:"#5C4530", speckleDensity:35, speckleSize:50},
-  gravel: {color:"#D9CDB0", speckleColor:"#726C62", speckleDensity:35, speckleSize:50},
-  paving: {color:"#EDE8DC"}
+  grass:  {color:"#C1A58F", speckleColor:"#354E2D", speckleDensity:35, speckleSize:50, borderColor:"#000000", borderWidth:1},
+  earth:  {color:"#B4BD78", speckleColor:"#28231F", speckleDensity:35, speckleSize:50, borderColor:"#000000", borderWidth:1},
+  gravel: {color:"#ECD9BD", speckleColor:"#896E43", speckleDensity:39, speckleSize:20, borderColor:"#000000", borderWidth:1},
+  paving: {color:"#EDE8DC", borderColor:"#000000", borderWidth:1}
 };
 document.getElementById("swGrass").style.background = PRESET_DEFAULTS.grass.color;
 document.getElementById("swEarth").style.background = PRESET_DEFAULTS.earth.color;
 document.getElementById("swGravel").style.background = PRESET_DEFAULTS.gravel.color;
 document.getElementById("swPaving").style.background = PRESET_DEFAULTS.paving.color;
+document.getElementById("resetShapesBtn").addEventListener("click", ()=>{
+  if(!confirm("Reset every background shape (lawn, gravel, paths, trees, bushes, plot) to its default style? This can't be undone.")) return;
+  snapshotForUndo();
+  STORE.bg.forEach(s=>{
+    if(s.type === "rect" || s.type === "circle"){
+      const preset = PRESET_DEFAULTS[s.pattern] || PRESET_DEFAULTS.grass;
+      s.color = preset.color;
+      s.borderColor = preset.borderColor;
+      s.borderWidth = preset.borderWidth;
+      if(preset.speckleColor != null){
+        s.speckleColor = preset.speckleColor;
+        s.speckleDensity = preset.speckleDensity;
+        s.speckleSize = preset.speckleSize;
+      }
+      if(s.type === "rect") s.cornerRadius = 1;
+    } else if(s.type === "plot"){
+      s.color = "#FFFFFF";
+      s.speckleColor = "#726C62";
+      s.speckleDensity = 28;
+      s.speckleSize = 50;
+      s.borderColor = "#000000";
+      s.borderWidth = 1;
+      s.cornerRadius = 1;
+    } else if(s.type === "bush"){
+      s.bushStyle = "plain";
+      s.flowerColor = "#9C6EB8";
+      s.flowerDensity = 60;
+    }
+  });
+  save(); renderBg();
+  if(editingBgId) closeBgEditor();
+  document.getElementById("mapSettingsOverlay").hidden = true;
+});
 function updateHeroPreview(s){
   if(!s) return;
   bgHeroPreviewInner.style.backgroundColor = s.color || "#ffffff";
@@ -2493,6 +2661,8 @@ patternButtons.forEach(btn=>{
     const preset = PRESET_DEFAULTS[s.pattern];
     if(preset){
       s.color = preset.color;
+      s.borderColor = preset.borderColor;
+      s.borderWidth = preset.borderWidth;
       if(preset.speckleColor != null){
         s.speckleColor = preset.speckleColor;
         s.speckleDensity = preset.speckleDensity;
@@ -2503,17 +2673,52 @@ patternButtons.forEach(btn=>{
     bgSpeckleField.style.display = (s.pattern !== "paving") ? "block" : "none";
     populateColorControls(s);
     updateHeroPreview(s);
+    document.getElementById("bgBorderColor").value = s.borderColor || "#000000";
+    document.getElementById("bgBorderWidth").value = s.borderWidth;
   });
 });
 function updateBushStyleSelection(style){
   bushStyleButtons.forEach(b=> b.classList.toggle("selected", b.dataset.bushstyle === (style||"plain")));
 }
+const bgFlowerField = document.getElementById("bgFlowerField");
+const bgFlowerColor = document.getElementById("bgFlowerColor");
+const bgFlowerDensity = document.getElementById("bgFlowerDensity");
+const bgFlowerDensityValue = document.getElementById("bgFlowerDensityValue");
+const bgFlowerPreviewSvg = document.getElementById("bgFlowerPreviewSvg");
+function updateFlowerPreview(s){
+  bgFlowerPreviewSvg.innerHTML = buildFloweringBushSVG(s.flowerColor, s.flowerDensity);
+}
+function updateFlowerControlsVisibility(s){
+  const show = s.type === "bush" && s.bushStyle === "flowering";
+  bgFlowerField.style.display = show ? "block" : "none";
+  if(show){
+    bgFlowerColor.value = s.flowerColor || "#9C6EB8";
+    const d = s.flowerDensity != null ? s.flowerDensity : 60;
+    bgFlowerDensity.value = d;
+    bgFlowerDensityValue.textContent = d + "%";
+    updateFlowerPreview(s);
+  }
+}
+bgFlowerColor.addEventListener("input", ()=>{
+  if(!editingBgId) return;
+  const s = STORE.bg.find(x=>x.id===editingBgId);
+  s.flowerColor = bgFlowerColor.value;
+  save(); renderBg(); updateFlowerPreview(s);
+});
+bgFlowerDensity.addEventListener("input", ()=>{
+  if(!editingBgId) return;
+  const s = STORE.bg.find(x=>x.id===editingBgId);
+  s.flowerDensity = Number(bgFlowerDensity.value);
+  bgFlowerDensityValue.textContent = s.flowerDensity + "%";
+  save(); renderBg(); updateFlowerPreview(s);
+});
 bushStyleButtons.forEach(btn=>{
   btn.addEventListener("click", ()=>{
     if(!editingBgId) return;
     const s = STORE.bg.find(x=>x.id===editingBgId);
     s.bushStyle = btn.dataset.bushstyle;
     save(); renderBg(); updateBushStyleSelection(s.bushStyle);
+    updateFlowerControlsVisibility(s);
   });
 });
 function updateBgLockButton(s){
@@ -2544,6 +2749,7 @@ function openBgEditor(id){
   }
   bgBushStyleField.style.display = isBush ? "block" : "none";
   if(isBush) updateBushStyleSelection(s.bushStyle);
+  updateFlowerControlsVisibility(s);
   document.getElementById("bgHeroPreview").style.display = (isTree || isBush) ? "none" : "block";
   bgFillCard.style.display = (isTree || isBush) ? "none" : "block";
   document.getElementById("bgShapeCard").style.display = (isTree || isBush) ? "none" : "block";
@@ -2619,6 +2825,12 @@ document.getElementById("bgSendBack").addEventListener("click", ()=>{
   if(!editingBgId) return;
   const s = STORE.bg.find(x=>x.id===editingBgId);
   STORE.bg = [s, ...STORE.bg.filter(x=>x.id!==editingBgId)];
+  save(); renderBg();
+});
+document.getElementById("bgBringFront").addEventListener("click", ()=>{
+  if(!editingBgId) return;
+  const s = STORE.bg.find(x=>x.id===editingBgId);
+  STORE.bg = [...STORE.bg.filter(x=>x.id!==editingBgId), s];
   save(); renderBg();
 });
 document.getElementById("bgDelete").addEventListener("click", ()=>{
