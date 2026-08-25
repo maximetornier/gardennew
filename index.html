@@ -314,6 +314,7 @@
       <button class="btn btn-leaf" id="addFutureBedBtn">+ Add Bed</button>
       <button class="btn btn-outline" id="futureDoneBtn"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:4px;"><path d="M4 12.5l5 5L20 6"/></svg>Done</button>
       <div style="margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button class="btn btn-outline btn-icon" id="resetAllFutureBtn" aria-label="Reset All Future Plans" title="Reset All Future Plans"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
         <button class="btn btn-outline btn-icon undoBtnEl" aria-label="Undo" disabled><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8H4V4"/><path d="M4 8c2.4-2.4 5-4 8-4a9 9 0 110 18"/></svg></button>
         <div class="zoomGroup">
           <button id="zoomOut3">−</button>
@@ -2368,6 +2369,20 @@ function updateDensity(bed){
 function hasPendingPlan(bed){
   return bed.futureOnly || bed.plannedX!==bed.x || bed.plannedY!==bed.y || bed.plannedW!==bed.w || bed.plannedH!==bed.h;
 }
+document.getElementById("resetAllFutureBtn").addEventListener("click", ()=>{
+  const pending = STORE.beds.filter(b => hasPendingPlan(b));
+  if(pending.length === 0){
+    alert("No future changes to reset — every bed already matches its current layout.");
+    return;
+  }
+  if(!confirm(`Reset all future bed layouts? This discards planned moves/resizes and deletes any beds that don't exist yet (${pending.length} bed${pending.length===1?"":"s"} affected). This can't be undone.`)) return;
+  snapshotForUndo();
+  STORE.beds = STORE.beds.filter(b => !b.futureOnly);
+  STORE.beds.forEach(b=>{
+    b.plannedX = b.x; b.plannedY = b.y; b.plannedW = b.w; b.plannedH = b.h;
+  });
+  save(); renderBeds();
+});
 function openEditor(id){
   editingId = id;
   const bed = STORE.beds.find(b=>b.id===id);
